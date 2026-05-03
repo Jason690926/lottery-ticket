@@ -23,8 +23,40 @@
 
 **評估態度：** 當分析結果統計上不顯著（p > 0.05、AUC < 0.55、命中率與隨機基準無差異等），會誠實標註「無顯著訊號」，不會為了「神準」強解。最終是否選號押注，由用戶自行決定。
 
-## 當前進度
-（首次空白；之後每次收工會更新）
+## 當前進度（2026-05-03 A 地階段）
+
+**Phase：尚在 Phase 0 之前（建構工作環境）**
+
+**本次完成：**
+- ✅ Repo 初始化 + push（CLAUDE.md / plan.md）
+- ✅ 安裝 8 個 Skills（commit `911d01b`，已 git 同步給 BC 台）
+  - `xlsx`（CSV/Excel 處理）
+  - `frontend-design` + `canvas-design`（將來儀表板與圖表）
+  - `doc-coauthoring`（寫分析報告）
+  - `brainstorming`（找關聯性的多角度發想）
+  - `systematic-debugging`（統計結果與假設不符時用）
+  - `writing-plans`（跟 plan.md 流程契合）
+  - `verification-before-completion`（量化驗證原則）
+
+**未完成（待 B 地或之後處理）：**
+- ⏸ 設定 3 個 MCP：filesystem / sequential-thinking / playwright（要編輯 `~/.claude.json`，A 地時間不夠）
+- ⏸ 之後再裝：sqlite-mcp、jupyter-mcp（等 Python 環境 + 資料就緒）
+
+**下一步（按優先順序）：**
+1. **設定 3 個 MCP**（filesystem / sequential-thinking / playwright）
+2. **討論「找關聯性」的具體方法假設**（建議先用 grill-me 對使用者的信念做質詢，逼出可驗證的具體假設）
+3. **決定資料來源**：
+   - 台彩官網爬蟲？
+   - 政府開放資料平台？
+   - 手動下載 CSV？
+4. **建 Python 環境**（venv 或 conda）+ 安裝套件（pandas, numpy, matplotlib, scipy）
+5. **抓威力彩全歷史開獎入庫**（CSV 或 SQLite）
+6. **Phase 1 基準線分析開跑**（plan.md 第三節 1-4 項）
+
+**待確認：**
+- 開獎資料來源 URL
+- 是否用 Jupyter Notebook 做探索（推薦）
+- 你的「關聯性」假設細節（grill-me 質詢時釐清）
 
 ## 技術棧
 - **主語言**：Python 3.11+
