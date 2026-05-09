@@ -64,9 +64,10 @@
 - ✅ Lag-2/3 transition：0/1,444×2 顯著（`phase1_lag23.ipynb`）
 - ✅ Order C pair→下期：0/26,714 顯著（`phase1_orderC.ipynb`）
 - ✅ 滾動時間窗：MK 趨勢 0/38、各時段 0/38、近 200 期 0/38（`phase1_rolling.ipynb`）
+- ✅ ACF/Fourier/開獎日：Ljung-Box 0/38、Fisher's g 0/38、開獎日 χ² 0/38（`phase1_acf_fourier.ipynb`）
 
 **Phase 4 ✅ 結案（`final_report.md`）：**
-- 全部 31,282 個統計檢定，FDR 顯著：**0 個**
+- 全部 31,396 個統計檢定，FDR 顯著：**0 個**
 - 結論：威力彩 1,807 期訓練資料在所有探索維度上與 i.i.d. 無法區分
 - Holdout 100 期**全程未解封**，建議保留不開
 
