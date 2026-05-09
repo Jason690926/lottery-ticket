@@ -60,12 +60,15 @@
 
 **🔴 結論：lag-1 transition 方向無顯著跨期關聯訊號。依照預設證偽門檻，建議結案（Phase 4）。**
 
-**下一步選項（請確認）：**
-1. **結案** → Phase 4：寫分析報告，記錄負結果
-2. **延伸探索**（非原計劃，僅供參考）：
-   - lag-2 / lag-3 transition
-   - pair → 下期單號（Order C）
-   - 時間窗滾動分析（近 200 期 vs 全期）
+**Phase 1 延伸（均為負結果）：**
+- ✅ Lag-2/3 transition：0/1,444×2 顯著（`phase1_lag23.ipynb`）
+- ✅ Order C pair→下期：0/26,714 顯著（`phase1_orderC.ipynb`）
+- ✅ 滾動時間窗：MK 趨勢 0/38、各時段 0/38、近 200 期 0/38（`phase1_rolling.ipynb`）
+
+**Phase 4 ✅ 結案（`final_report.md`）：**
+- 全部 31,282 個統計檢定，FDR 顯著：**0 個**
+- 結論：威力彩 1,807 期訓練資料在所有探索維度上與 i.i.d. 無法區分
+- Holdout 100 期**全程未解封**，建議保留不開
 
 ## 技術棧
 - **主語言**：Python 3.11+
