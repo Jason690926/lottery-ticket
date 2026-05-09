@@ -10,25 +10,31 @@ ROLLING = 200
 
 
 def _get_draws(n: int) -> pd.DataFrame:
+    """Fetch exactly n most-recent draws, sorted ascending by id."""
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql(
         f"SELECT id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
-        f"FROM draws ORDER BY id DESC LIMIT {n + 1}",
+        f"FROM draws ORDER BY id DESC LIMIT {n}",
         conn,
     )
     conn.close()
     return df.sort_values("id").reset_index(drop=True)
 
 
-def zone1_analysis(condition_nums: list[int], rolling: int = ROLLING) -> tuple[pd.DataFrame, int, int]:
+def zone1_analysis(
+    condition_nums: list[int],
+    rolling: int = ROLLING,
+    lag: int = 1,
+) -> tuple[pd.DataFrame, int, int]:
     """
-    For each x in condition_nums: find draws where x appeared,
-    count next-draw Z1 frequencies, sum across all conditions.
-    Returns (DataFrame sorted by combined count DESC, total_cond_appearances, num_source_draws).
+    For each x in condition_nums:
+      find source draws (within last `rolling`) where x appeared,
+      count frequencies in the draw `lag` periods later.
+    Returns (DataFrame sorted by combined count DESC, total_cond_appearances, T).
     """
-    df = _get_draws(rolling)
-    src = df.iloc[:-1].reset_index(drop=True)
-    nxt = df.iloc[1:].reset_index(drop=True)
+    df = _get_draws(rolling + lag)
+    src = df.iloc[:rolling].reset_index(drop=True)
+    nxt = df.iloc[lag : rolling + lag].reset_index(drop=True)
     T = len(src)
 
     src_p = np.zeros((T, 38), dtype=np.int8)
@@ -66,14 +72,49 @@ def zone1_analysis(condition_nums: list[int], rolling: int = ROLLING) -> tuple[p
     return result, total_cond, T
 
 
+def zone1_combined(
+    condition_nums: list[int],
+    rolling: int = ROLLING,
+    w1: float = 0.6,
+    w2: float = 0.4,
+) -> pd.DataFrame:
+    """
+    Compute weighted combined ranking of lag-1 and lag-2 analyses.
+    Each module's counts are normalised to [0,1] before weighting.
+    Returns DataFrame sorted by 綜合分數 DESC.
+    """
+    df1, _, _ = zone1_analysis(condition_nums, rolling, lag=1)
+    df2, _, _ = zone1_analysis(condition_nums, rolling, lag=2)
+
+    merged = df1[["號碼", "合計次數", "合計頻率%", f"近{rolling}期頻率%"]].rename(
+        columns={"合計次數": "M1次數", "合計頻率%": "M1頻率%"}
+    )
+    merged = merged.merge(
+        df2[["號碼", "合計次數", "合計頻率%"]].rename(
+            columns={"合計次數": "M2次數", "合計頻率%": "M2頻率%"}
+        ),
+        on="號碼",
+    )
+
+    m1_max = merged["M1次數"].max()
+    m2_max = merged["M2次數"].max()
+    m1_norm = merged["M1次數"] / m1_max if m1_max > 0 else 0.0
+    m2_norm = merged["M2次數"] / m2_max if m2_max > 0 else 0.0
+
+    merged["綜合分數"] = (w1 * m1_norm + w2 * m2_norm).round(4)
+    merged = merged.sort_values("綜合分數", ascending=False).reset_index(drop=True)
+    merged.insert(0, "排名", range(1, 39))
+    return merged
+
+
 def zone2_analysis(condition_z2: int, rolling: int = ROLLING) -> tuple[pd.DataFrame, int]:
     """
-    Given last Zone2 number, count next-draw Z2 frequencies.
+    Given last Zone2 number, count next-draw Z2 frequencies (lag-1).
     Returns (DataFrame sorted by condition count DESC, n_condition_draws).
     """
-    df = _get_draws(rolling)
-    src = df.iloc[:-1].reset_index(drop=True)
-    nxt = df.iloc[1:].reset_index(drop=True)
+    df = _get_draws(rolling + 1)
+    src = df.iloc[:rolling].reset_index(drop=True)
+    nxt = df.iloc[1 : rolling + 1].reset_index(drop=True)
     T = len(src)
 
     mask = src["n_zone2"] == condition_z2
