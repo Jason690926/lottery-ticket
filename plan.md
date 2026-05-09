@@ -1,6 +1,6 @@
 # 彩券選號系統 — 規劃細節
 
-> 建立日期：2026-05-03｜本檔將隨討論逐步補完，CLAUDE.md 是高層概念，本檔是技術細節
+> 建立日期：2026-05-03｜最後更新：2026-05-09｜CLAUDE.md 是高層概念，本檔是技術細節
 
 ---
 
@@ -143,41 +143,73 @@
 9. **機器學習分類** — 給定歷史，預測「某號下期會中」的機率
 10. **深度學習序列模型**（LSTM/Transformer，後期視結果決定）
 
-## 四、開發路線圖（更新版，依 grill-me 結論）
+## 四、開發路線圖（更新版，2026-05-09）
 
-### Phase 0：環境 + 資料就位
-- 建 Python venv（pandas, numpy, scipy, matplotlib, statsmodels, jupyter）
-- 下載 D423F CSV（政府開放資料），解析威力彩全歷史
-- 入 SQLite（一張 `draws` 表）
-- 基本 EDA：每號頻率、第二區頻率、年度趨勢視覺化
-- **資料切分：訓練 1,700 期 + 測試 100 期**（測試集即時鎖住，命名 `holdout_100`）
+### Phase 0 ✅：環境 + 資料就位（完成）
+### Phase 1 ✅：跨期關聯探索（完成，全部負結果）
+### Phase 4 ✅：統計研究結案（完成，`final_report.md`）
 
-### Phase 1：跨期關聯探索（Order A + B 同步）
-- 用訓練集（1,700 期）建 38×38 transition matrix（一區）+ 8×8（二區）
-- **Test B**：每 row 卡方檢定 → 找出「給定上期某號，下期分布顯著非均勻」的號
-- **Test A**：每 cell 卡方 + FDR (BH) q < 0.05 → 找出顯著 transition
-- 視覺化 heatmap（A 用）+ barplot（B 用，挑顯著的 row）
-- **若 B 全無訊號 → A 一定也無 → 直接跳 Phase 4 結案**
+---
 
-### Phase 2：100 期 holdout 回測
-- 用 Phase 1 找出的候選 transition 建立預測模型
-- 對 holdout 100 期逐期模擬：
-  - 用 1 ~ (期數-1) 的資料推薦下期 6+1 號
-  - 同時隨機選 6+1 號做 baseline
-  - 對照真實開獎，依獎金結構算 NT$ 報酬
-- 配對 t-test：你的方法 vs 隨機，p < 0.05 才算過關
-- 畫資金曲線圖
-- **過關 → Phase 3；不過關 → 認賠 + 結案**
+### Streamlit 選號工具（進行中）
 
-### Phase 3：模型精煉（**只在 Phase 2 過關才做**）
-- 嘗試擴展到 Order C（pair → 單號）— 若資料夠
-- 機器學習分類器（logistic regression / gradient boosting）建 P(某號下期會中)
-- 多模型 ensemble + 重新 100 期回測
-- 思考組合結構（C 方向）做為「分潤優化」加碼
+**設計原則（grill-me 確認）：**
+- 目標：正向選號——給定上期條件，找歷史上出現率較高的號碼
+- 資料範圍：滾動最近 200 期（全部資料，不限 split）
+- 多條件邏輯：各條件次數加總（加權合計），不做 AND 交集
+- 統計誠實聲明常駐於介面底部
 
-### Phase 4：結案 OR 擴展大樂透
-- 結案：寫詳細報告，記錄所有負結果與假設
-- 擴展：套用 Phase 0-3 到大樂透（49 選 6）
+**雙區塊架構：**
+
+```
+第一區塊（本期號碼）  →  lag-1 分析  →  預測下一期
+第二區塊（上一期號碼）→  lag-2 分析  →  預測同一個下一期
+                                      ↓
+                           ⚖️ 綜合加權排名（可調比重）
+```
+
+**核心函式（`query_engine.py`）：**
+
+```python
+zone1_analysis(condition_nums, rolling=200, lag=1)
+    # → (DataFrame排名表, total_cond_appearances, T)
+    # DataFrame 欄位：排名, 號碼, #xx次數(各條件), 合計次數, 合計頻率%, 近N期頻率%
+
+zone1_dual_combined(block1_nums, block2_nums, rolling=200, w1=0.5, w2=0.5)
+    # block1 用 lag=1，block2 用 lag=2
+    # 各自標準化至 [0,1] 後依 w1/w2 加總
+    # → DataFrame：排名, 號碼, B1次數, B2次數, 綜合分數, B1頻率%, B2頻率%, 近N期頻率%
+
+zone2_analysis(condition_z2, rolling=200)
+    # → (DataFrame排名表, n_condition_draws)
+```
+
+**UI 結構（`app.py`）：**
+
+```
+[Header + 說明]
+[第一區塊輸入 | 第二區塊輸入]  ← 並排，各有 Z1 multiselect + Z2 selectbox
+[分析 Tabs]
+  ├── 🔵 第一區塊：lag-1 頻率表 + 堆疊長條 + 折線圖
+  ├── 🟠 第二區塊：lag-2 頻率表 + 堆疊長條 + 折線圖（有說明 lag-2 語意）
+  └── ⚖️ 綜合加權：w1 滑桿 + 明細表 + 泡泡散布圖 + 貢獻分解長條
+[第二區分析]
+  ├── 🔵 B1 Tab：頻率表 + 長條圖
+  ├── 🟠 B2 Tab：頻率表 + 長條圖
+  └── ⚖️ 合併比較 Tab（兩個都填才出現）：排名合併表 + 並排長條圖
+[統計免責聲明]
+```
+
+**待辦（低優先）：**
+- ⏸ 資料自動更新（爬最新開獎補入 DB）
+- ⏸ 大樂透擴展（Phase 2，1-49 選 6）
+- ⏸ MCP 設定
+
+### Phase 2（暫緩）：100 期 holdout 回測
+> 統計研究全面負結果，Holdout 保留不開。若日後有新假說（如深度學習序列模型）再啟用。
+
+### Phase 3（暫緩）：模型精煉
+> 依 Phase 2 結果決定是否進行。
 
 ## 五、技術棧細節
 
