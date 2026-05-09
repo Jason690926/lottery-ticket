@@ -45,13 +45,27 @@
 - ⏸ 設定 3 個 MCP：filesystem / sequential-thinking / playwright
 - ⏸ 之後再裝：sqlite-mcp、jupyter-mcp
 
-**下一步（Phase 0 EDA → Phase 1）：**
-1. **Phase 0 EDA Notebook**：基本敘述統計、每號頻率、年度趨勢視覺化
-2. **Phase 1 開跑**：用訓練集 1,807 期建 38×38 transition matrix（一區）+ 8×8（二區），Test A + Test B，FDR 篩選
+**Phase 0 EDA ✅ 完成**（`eda_phase0.ipynb`）：
+- 一區/二區頻率均勻性、奇偶比、區段分布、年度趨勢熱力圖
+- 所有卡方檢定均無顯著偏差 → 靜態頻率方向（機械偏差）無訊號
 
-**待確認：**
-- 預算：你願意花多少時間/算力？
-- 是否保留 bigT 的「12 期背景特徵」當對照組
+**Phase 1 ✅ 完成**（`phase1_transition.ipynb`）：
+
+| 檢定 | 結果 |
+|------|------|
+| 一區 Test B（38 row χ²） | 原始 p<0.05：**0/38**（隨機期望 ~2） |
+| 一區 Test A（1,444 cell binomial + FDR） | q<0.05：**0/1,444** |
+| 二區 Test B（8 row χ²） | p<0.05：**0/8** |
+| 二區 Test A（64 cell binomial + FDR） | q<0.05：**0/64** |
+
+**🔴 結論：lag-1 transition 方向無顯著跨期關聯訊號。依照預設證偽門檻，建議結案（Phase 4）。**
+
+**下一步選項（請確認）：**
+1. **結案** → Phase 4：寫分析報告，記錄負結果
+2. **延伸探索**（非原計劃，僅供參考）：
+   - lag-2 / lag-3 transition
+   - pair → 下期單號（Order C）
+   - 時間窗滾動分析（近 200 期 vs 全期）
 
 ## 技術棧
 - **主語言**：Python 3.11+
