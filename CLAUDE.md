@@ -23,40 +23,33 @@
 
 **評估態度：** 當分析結果統計上不顯著（p > 0.05、AUC < 0.55、命中率與隨機基準無差異等），會誠實標註「無顯著訊號」，不會為了「神準」強解。最終是否選號押注，由用戶自行決定。
 
-## 當前進度（2026-05-03 grill-me 後）
+## 當前進度（2026-05-09）
 
-**Phase：Phase 0 之前（環境建構 + 資料下載準備好開跑）**
+**Phase：Phase 0 完成，Phase 1 待開跑**
 
-**本次完成：**
+**Phase 0 已完成：**
 - ✅ Repo 初始化 + push（CLAUDE.md / plan.md）
 - ✅ 安裝 8 個 Skills + git 同步（`911d01b`）
-- ✅ 跑完 grill-me 質詢，釘下方法論（細節在 plan.md 第二節）：
-  - **信念：D-revised 跨期關聯預測**（馬可夫鏈思維）
-  - **證偽門檻：100 期 holdout 回測，配對 t-test p < 0.05**
-  - **Phase 1 方向：Order A+B 同步做 transition matrix**
-  - **統計校正：FDR (Benjamini-Hochberg)**
-  - **資料切分：訓練 1,700 期 + 測試 100 期，鎖死 holdout**
-- ✅ 確認威力彩官方規則（plan.md 第一節整套寫好）：
-  - 一注 NT$100（**不是 NT$50**，之前我算錯）
-  - 完整獎金結構表
-  - 規則變更斷點：2010-09 新增玖獎
-  - 資料來源：政府開放資料 D423F CSV（不必爬蟲）
-  - 機台監督嚴密（Smartplay+TÜV+會計師）→ 跨期關聯假設要心理準備可能找不到訊號
+- ✅ grill-me 質詢完成，方法論釘定（plan.md 第二節）
+- ✅ 確認威力彩官方規則（plan.md 第一節）
+- ✅ **Python venv 建立**（Python 3.14.4，路徑 `.venv/`）
+  - 套件：pandas, numpy, scipy, matplotlib, seaborn, statsmodels, jupyter, sqlalchemy, ipykernel
+- ✅ **下載全部歷史資料**（政府開放資料 D423F，2008-2026）
+  - 各年度 zip 存放於 `data/` 目錄
+- ✅ **SQLite 入庫完成**（`lottery.db`，`draws` 表）
+  - 總計 **1,907 期**（2008-01-24 ～ 2026-04-30）
+  - 訓練集：1,807 期（split = 'train'）
+  - **Holdout 鎖死：最後 100 期**（split = 'holdout_100'）⚠️ Phase 2 前不得碰
 
-**未完成（待 B 地或之後處理）：**
+**未完成（低優先）：**
 - ⏸ 設定 3 個 MCP：filesystem / sequential-thinking / playwright
-- ⏸ 之後再裝：sqlite-mcp、jupyter-mcp（等 Python 環境就緒）
+- ⏸ 之後再裝：sqlite-mcp、jupyter-mcp
 
-**下一步（按優先順序）：**
-1. **下載 D423F CSV** 看資料格式
-2. **建 Python 環境**（venv + pandas/numpy/scipy/statsmodels/matplotlib/jupyter）
-3. **入 SQLite**（`draws` 表）
-4. **資料切分**：訓練 1,700 期 + 測試 100 期 holdout
-5. **Phase 0 EDA**：基本敘述統計、年度趨勢視覺化
-6. **Phase 1 開跑**：Order A+B 同步做 transition matrix + FDR 篩選
+**下一步（Phase 0 EDA → Phase 1）：**
+1. **Phase 0 EDA Notebook**：基本敘述統計、每號頻率、年度趨勢視覺化
+2. **Phase 1 開跑**：用訓練集 1,807 期建 38×38 transition matrix（一區）+ 8×8（二區），Test A + Test B，FDR 篩選
 
 **待確認：**
-- 是否用 Jupyter Notebook 做探索（推薦）
 - 預算：你願意花多少時間/算力？
 - 是否保留 bigT 的「12 期背景特徵」當對照組
 
