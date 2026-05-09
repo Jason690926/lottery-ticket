@@ -72,34 +72,36 @@ def zone1_analysis(
     return result, total_cond, T
 
 
-def zone1_combined(
-    condition_nums: list[int],
+def zone1_dual_combined(
+    block1_nums: list[int],
+    block2_nums: list[int],
     rolling: int = ROLLING,
-    w1: float = 0.6,
-    w2: float = 0.4,
+    w1: float = 0.5,
+    w2: float = 0.5,
 ) -> pd.DataFrame:
     """
-    Compute weighted combined ranking of lag-1 and lag-2 analyses.
+    Weighted combination of two independent lag-1 analyses.
+    block1 and block2 are separate condition sets (e.g. two different draws).
     Each module's counts are normalised to [0,1] before weighting.
     Returns DataFrame sorted by 綜合分數 DESC.
     """
-    df1, _, _ = zone1_analysis(condition_nums, rolling, lag=1)
-    df2, _, _ = zone1_analysis(condition_nums, rolling, lag=2)
+    df1, _, _ = zone1_analysis(block1_nums, rolling, lag=1)
+    df2, _, _ = zone1_analysis(block2_nums, rolling, lag=1)
 
     merged = df1[["號碼", "合計次數", "合計頻率%", f"近{rolling}期頻率%"]].rename(
-        columns={"合計次數": "M1次數", "合計頻率%": "M1頻率%"}
+        columns={"合計次數": "B1次數", "合計頻率%": "B1頻率%"}
     )
     merged = merged.merge(
         df2[["號碼", "合計次數", "合計頻率%"]].rename(
-            columns={"合計次數": "M2次數", "合計頻率%": "M2頻率%"}
+            columns={"合計次數": "B2次數", "合計頻率%": "B2頻率%"}
         ),
         on="號碼",
     )
 
-    m1_max = merged["M1次數"].max()
-    m2_max = merged["M2次數"].max()
-    m1_norm = merged["M1次數"] / m1_max if m1_max > 0 else 0.0
-    m2_norm = merged["M2次數"] / m2_max if m2_max > 0 else 0.0
+    m1_max = merged["B1次數"].max()
+    m2_max = merged["B2次數"].max()
+    m1_norm = merged["B1次數"] / m1_max if m1_max > 0 else 0.0
+    m2_norm = merged["B2次數"] / m2_max if m2_max > 0 else 0.0
 
     merged["綜合分數"] = (w1 * m1_norm + w2 * m2_norm).round(4)
     merged = merged.sort_values("綜合分數", ascending=False).reset_index(drop=True)
