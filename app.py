@@ -462,33 +462,72 @@ if any_z2:
     if both_z2:
         with z2_tabs[tab_idx]:
             st.markdown("#### 兩個區塊第二區頻率合併比較")
-            df2_b1_cmp, _ = zone2_analysis(b1_z2, ROLLING)
-            df2_b2_cmp, _ = zone2_analysis(b2_z2, ROLLING)
-            fig_cmp = go.Figure()
-            fig_cmp.add_trace(go.Bar(
-                name=f"第一區塊 #{b1_z2}",
-                x=[str(w) for w in df2_b1_cmp.sort_values("號碼")["號碼"]],
-                y=df2_b1_cmp.sort_values("號碼")[f"#{b1_z2}頻率%"],
-                marker_color="#1f6feb",
-                hovertemplate="%{x}號　%{y:.1f}%<extra>第一區塊</extra>",
-            ))
-            fig_cmp.add_trace(go.Bar(
-                name=f"第二區塊 #{b2_z2}",
-                x=[str(w) for w in df2_b2_cmp.sort_values("號碼")["號碼"]],
-                y=df2_b2_cmp.sort_values("號碼")[f"#{b2_z2}頻率%"],
-                marker_color="#ffa657",
-                hovertemplate="%{x}號　%{y:.1f}%<extra>第二區塊</extra>",
-            ))
-            fig_cmp.add_hline(y=12.5, line_dash="dash", line_color="#6e7681",
-                              annotation_text="基準 12.5%", annotation_font_color="#8b949e")
-            fig_cmp.update_layout(
-                barmode="group",
-                xaxis=dict(title="第二區號碼", gridcolor="#21262d"),
-                yaxis=dict(title="頻率 %", gridcolor="#21262d"),
-                legend=dict(bgcolor="#161b22", bordercolor="#30363d"),
-                height=360, **_plotly_base(),
+            df2_b1_cmp, n_c_b1 = zone2_analysis(b1_z2, ROLLING)
+            df2_b2_cmp, n_c_b2 = zone2_analysis(b2_z2, ROLLING)
+
+            # ── 排名合併表 ────────────────────────────────────────────
+            ov_col = f"近{ROLLING}期頻率%"
+            merged_z2 = (
+                df2_b1_cmp[["號碼", f"#{b1_z2}次數", f"#{b1_z2}頻率%", ov_col]]
+                .merge(
+                    df2_b2_cmp[["號碼", f"#{b2_z2}次數", f"#{b2_z2}頻率%"]],
+                    on="號碼",
+                )
             )
-            st.plotly_chart(fig_cmp, use_container_width=True)
+            merged_z2["平均頻率%"] = (
+                (merged_z2[f"#{b1_z2}頻率%"] + merged_z2[f"#{b2_z2}頻率%"]) / 2
+            ).round(1)
+            merged_z2 = merged_z2.sort_values("平均頻率%", ascending=False).reset_index(drop=True)
+            merged_z2.insert(0, "排名", range(1, 9))
+
+            col_zt, col_zc = st.columns([1, 1])
+            with col_zt:
+                st.markdown("**合併排名表（依平均頻率排序）**")
+                st.dataframe(
+                    merged_z2,
+                    column_config={
+                        "排名": st.column_config.NumberColumn("排名", width="small"),
+                        f"#{b1_z2}次數":  st.column_config.ProgressColumn(
+                            f"B1 #{b1_z2}次數", min_value=0,
+                            max_value=int(merged_z2[f"#{b1_z2}次數"].max()), format="%d"),
+                        f"#{b2_z2}次數":  st.column_config.ProgressColumn(
+                            f"B2 #{b2_z2}次數", min_value=0,
+                            max_value=int(merged_z2[f"#{b2_z2}次數"].max()), format="%d"),
+                        f"#{b1_z2}頻率%": st.column_config.NumberColumn(f"B1頻率%", format="%.1f %%"),
+                        f"#{b2_z2}頻率%": st.column_config.NumberColumn(f"B2頻率%", format="%.1f %%"),
+                        "平均頻率%":      st.column_config.NumberColumn("平均頻率%", format="%.1f %%"),
+                        ov_col:           st.column_config.NumberColumn(ov_col, format="%.1f %%"),
+                    },
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            with col_zc:
+                st.markdown("**B1 vs B2 頻率比較圖**")
+                fig_cmp = go.Figure()
+                fig_cmp.add_trace(go.Bar(
+                    name=f"B1 #{b1_z2}（lag-1）",
+                    x=[str(w) for w in df2_b1_cmp.sort_values("號碼")["號碼"]],
+                    y=df2_b1_cmp.sort_values("號碼")[f"#{b1_z2}頻率%"],
+                    marker_color="#1f6feb",
+                    hovertemplate="%{x}號　%{y:.1f}%<extra>B1</extra>",
+                ))
+                fig_cmp.add_trace(go.Bar(
+                    name=f"B2 #{b2_z2}（lag-2）",
+                    x=[str(w) for w in df2_b2_cmp.sort_values("號碼")["號碼"]],
+                    y=df2_b2_cmp.sort_values("號碼")[f"#{b2_z2}頻率%"],
+                    marker_color="#ffa657",
+                    hovertemplate="%{x}號　%{y:.1f}%<extra>B2</extra>",
+                ))
+                fig_cmp.add_hline(y=12.5, line_dash="dash", line_color="#6e7681",
+                                  annotation_text="基準 12.5%", annotation_font_color="#8b949e")
+                fig_cmp.update_layout(
+                    barmode="group",
+                    xaxis=dict(title="第二區號碼（號碼順序）", gridcolor="#21262d"),
+                    yaxis=dict(title="頻率 %", gridcolor="#21262d"),
+                    legend=dict(bgcolor="#161b22", bordercolor="#30363d"),
+                    height=360, **_plotly_base(),
+                )
+                st.plotly_chart(fig_cmp, use_container_width=True)
 
 elif run:
     st.info("請選擇至少一個區塊的第二區號碼")
