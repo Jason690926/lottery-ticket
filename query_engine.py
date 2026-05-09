@@ -85,8 +85,8 @@ def zone1_dual_combined(
     Each module's counts are normalised to [0,1] before weighting.
     Returns DataFrame sorted by 綜合分數 DESC.
     """
-    df1, _, _ = zone1_analysis(block1_nums, rolling, lag=1)
-    df2, _, _ = zone1_analysis(block2_nums, rolling, lag=1)
+    df1, _, _ = zone1_analysis(block1_nums, rolling, lag=1)   # 本期 → 下一期
+    df2, _, _ = zone1_analysis(block2_nums, rolling, lag=2)   # 上一期 → 隔一期（同一目標）
 
     merged = df1[["號碼", "合計次數", "合計頻率%", f"近{rolling}期頻率%"]].rename(
         columns={"合計次數": "B1次數", "合計頻率%": "B1頻率%"}

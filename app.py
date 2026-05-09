@@ -87,7 +87,7 @@ st.divider()
 col_b1, col_div, col_b2 = st.columns([5, 0.2, 5])
 
 with col_b1:
-    st.markdown('<div class="block-header block-b1">🔵 第一選號區塊</div>', unsafe_allow_html=True)
+    st.markdown('<div class="block-header block-b1">🔵 第一選號區塊　本期號碼（lag-1）</div>', unsafe_allow_html=True)
     b1_z1 = st.multiselect(
         "第一區號碼（1–38，最多 6 個）",
         options=list(range(1, 39)),
@@ -104,7 +104,7 @@ with col_b1:
     )
 
 with col_b2:
-    st.markdown('<div class="block-header block-b2">🟠 第二選號區塊</div>', unsafe_allow_html=True)
+    st.markdown('<div class="block-header block-b2">🟠 第二選號區塊　上一期號碼（lag-2）</div>', unsafe_allow_html=True)
     b2_z1 = st.multiselect(
         "第一區號碼（1–38，最多 6 個）",
         options=list(range(1, 39)),
@@ -200,8 +200,8 @@ def _render_block_line(df, label_color):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_block_section(nums, label, badge_class, palette, label_color, top_n):
-    df, total_cond, T = zone1_analysis(nums, ROLLING, lag=1)
+def _render_block_section(nums, label, badge_class, palette, label_color, top_n, lag=1):
+    df, total_cond, T = zone1_analysis(nums, ROLLING, lag=lag)
     badges = "　".join(f'<span class="{badge_class}">#{x:02d}</span>' for x in nums)
     st.markdown(f"條件：{badges}", unsafe_allow_html=True)
     k1, k2, k3, k4 = st.columns(4)
@@ -244,13 +244,19 @@ if any_z1:
     if tab1 and b1_z1:
         with tab1:
             df_b1 = _render_block_section(
-                b1_z1, "第一區塊", "badge-b1", PALETTE_B1, "#58a6ff", top_n
+                b1_z1, "第一區塊", "badge-b1", PALETTE_B1, "#58a6ff", top_n, lag=1
             )
 
     if tab2 and b2_z1:
         with tab2:
+            st.markdown(
+                '<div class="info-card">📌 <b style="color:#c9d1d9">Lag-2（隔一期）</b>：'
+                '以「上一期號碼」為條件，統計歷史上間隔一期後的號碼出現頻率，'
+                '與第一區塊（lag-1）預測同一個下一期。</div>',
+                unsafe_allow_html=True,
+            )
             df_b2 = _render_block_section(
-                b2_z1, "第二區塊", "badge-b2", PALETTE_B2, "#ffa657", top_n
+                b2_z1, "第二區塊", "badge-b2", PALETTE_B2, "#ffa657", top_n, lag=2
             )
 
     if tab3 and both_z1:
