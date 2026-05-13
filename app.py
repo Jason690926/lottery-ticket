@@ -1,6 +1,9 @@
 import streamlit as st
 import plotly.graph_objects as go
 
+import sqlite3
+from pathlib import Path
+
 from query_engine import ROLLING, zone1_analysis, zone1_dual_combined, zone2_analysis
 
 # 啟動時靜默更新資料庫（失敗不影響 app 運作）
@@ -83,10 +86,21 @@ def _plotly_base():
 
 
 # ── Header ─────────────────────────────────────────────────────────────────────
+def _latest_draw_date() -> str:
+    try:
+        db = Path(__file__).parent / "lottery.db"
+        conn = sqlite3.connect(db)
+        date = conn.execute("SELECT MAX(draw_date) FROM draws").fetchone()[0]
+        conn.close()
+        return date or "—"
+    except Exception:
+        return "—"
+
 st.markdown('<div class="main-title">🎯 威力彩條件篩選系統</div>', unsafe_allow_html=True)
 st.markdown(
     f'<div class="sub-title">POWERBALL CONDITIONAL FREQUENCY ANALYZER　｜　'
-    f'滾動最近 <b style="color:#58a6ff">{ROLLING}</b> 期歷史資料</div>',
+    f'滾動最近 <b style="color:#58a6ff">{ROLLING}</b> 期歷史資料　｜　'
+    f'資料最新至 <b style="color:#3fb950">{_latest_draw_date()}</b></div>',
     unsafe_allow_html=True,
 )
 
