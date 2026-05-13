@@ -3,6 +3,17 @@ import plotly.graph_objects as go
 
 from query_engine import ROLLING, zone1_analysis, zone1_dual_combined, zone2_analysis
 
+# 啟動時靜默更新資料庫（失敗不影響 app 運作）
+@st.cache_resource(show_spinner=False)
+def _auto_update_db():
+    try:
+        import update_db
+        update_db.main()
+    except Exception:
+        pass
+
+_auto_update_db()
+
 st.set_page_config(
     page_title="威力彩條件篩選系統",
     page_icon="🎯",
