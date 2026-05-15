@@ -94,7 +94,18 @@ app.py  # Streamlit 介面，深色科技風（GitHub dark 配色）
 **未完成 / 待優化（低優先）：**
 - ⏸ 設定 MCP：filesystem / sequential-thinking / playwright
 - ⏸ 資料自動更新（定期爬最新開獎並補入 lottery.db）
-- ⏸ 大樂透擴展（Phase 2）
+
+---
+
+**大樂透分頁 ⏸ 設計完成、實作待開工（2026-05-15）**
+
+- 設計文件：`docs/superpowers/specs/2026-05-15-大樂透分頁-design.md`
+- 實作計畫：`docs/superpowers/plans/2026-05-15-大樂透分頁.md`（17 個 task）
+- 路線：**參數化共用引擎**（query_engine 接 `LotteryConfig`，威力彩/大樂透各傳一份）
+- 資料：同一個 `lottery.db`、新表 `draws_lotto649`，從 2014-01 回灌；不切 holdout
+- 特別號：採簡化邏輯（基準 2.04%），不排除「特別號落在主號」的不可能組合
+- UI：拆檔 `app.py` + `ui_shared.py` + `ui_powerball.py` + `ui_lotto649.py`，頂層兩個 tab
+- 開工指令：「繼續大樂透實作」→ 從計畫 Task 1（API 探勘）開始
 
 ## 技術棧
 - **主語言**：Python 3.11+
