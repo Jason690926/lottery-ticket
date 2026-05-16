@@ -132,7 +132,8 @@ ui_lotto649.py  # 大樂透 render()（cfg=LOTTO649, key 前綴 lt_）
 
 **未完成 / 待優化（低優先）：**
 - ⏸ 設定 MCP：filesystem / sequential-thinking / playwright
-- ⏸ 桌面捷徑檔名仍為「威力彩選號工具.bat」（功能正常，未改名；可考慮改為「樂透選號工具.bat」）
+
+**桌面捷徑 ✅ 已改名（2026-05-16）**：`樂透選號工具.bat`（原「威力彩選號工具.bat」），內容仍 `streamlit run app.py`，雙擊正常啟動兩彩種分頁
 
 ## 技術棧
 - **主語言**：Python 3.11+
