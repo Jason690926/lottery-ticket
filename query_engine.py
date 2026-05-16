@@ -35,12 +35,12 @@ LOTTO649 = LotteryConfig(
 )
 
 
-def _get_draws(n: int) -> pd.DataFrame:
-    """Fetch exactly n most-recent draws, sorted ascending by id."""
+def _get_draws(n: int, cfg: LotteryConfig = POWERBALL) -> pd.DataFrame:
+    """Fetch exactly n most-recent draws from cfg.table, sorted ascending by id."""
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql(
         f"SELECT id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
-        f"FROM draws ORDER BY id DESC LIMIT {n}",
+        f"FROM {cfg.table} ORDER BY id DESC LIMIT {n}",
         conn,
     )
     conn.close()
