@@ -1,4 +1,5 @@
 import sqlite3
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -7,6 +8,31 @@ import pandas as pd
 DB_PATH = Path(__file__).parent / "lottery.db"
 Z1_COLS = ["n1", "n2", "n3", "n4", "n5", "n6"]
 ROLLING = 200
+
+
+@dataclass(frozen=True)
+class LotteryConfig:
+    name: str               # 'powerball' / 'lotto649'
+    table: str              # SQLite 表名
+    z1_max: int             # 第一區號碼上限（38 / 49）
+    z1_pick: int            # 第一區開出顆數（6 / 6）
+    z1_baseline_pct: float  # 第一區理論基準頻率 % (15.8 / 12.2)
+    has_zone2: bool         # 是否有第二區
+    z2_max: int             # 第二區號碼上限（8 / 49）
+    z2_baseline_pct: float  # 第二區理論基準頻率 % (12.5 / 2.04)
+
+
+POWERBALL = LotteryConfig(
+    name="powerball", table="draws",
+    z1_max=38, z1_pick=6, z1_baseline_pct=15.8,
+    has_zone2=True, z2_max=8, z2_baseline_pct=12.5,
+)
+
+LOTTO649 = LotteryConfig(
+    name="lotto649", table="draws_lotto649",
+    z1_max=49, z1_pick=6, z1_baseline_pct=12.2,
+    has_zone2=True, z2_max=49, z2_baseline_pct=2.04,
+)
 
 
 def _get_draws(n: int) -> pd.DataFrame:
