@@ -36,15 +36,20 @@ LOTTO649 = LotteryConfig(
 
 
 def _get_draws(n: int, cfg: LotteryConfig = POWERBALL) -> pd.DataFrame:
-    """Fetch exactly n most-recent draws from cfg.table, sorted ascending by id."""
+    """Fetch exactly n most-recent draws from cfg.table, sorted ascending by draw date.
+
+    時序鍵用 draw_date（tie-break draw_id），不用 id：draws 的 id 恰好等於時序，
+    但 draws_lotto649 因回灌/增量插入順序，id 與開獎時序無關（會把 lag 配對打亂）。
+    draw_date 為零填 'YYYY/MM/DD' 字串，字典序即時序；對威力彩輸出與舊版完全相同。
+    """
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql(
-        f"SELECT id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
-        f"FROM {cfg.table} ORDER BY id DESC LIMIT {n}",
+        f"SELECT id, draw_id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
+        f"FROM {cfg.table} ORDER BY draw_date DESC, draw_id DESC LIMIT {n}",
         conn,
     )
     conn.close()
-    return df.sort_values("id").reset_index(drop=True)
+    return df.sort_values(["draw_date", "draw_id"]).reset_index(drop=True)
 
 
 def zone1_analysis(
@@ -200,7 +205,7 @@ def latest_two_draws(
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql(
         f"SELECT draw_id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
-        f"FROM {cfg.table} ORDER BY id DESC LIMIT 2",
+        f"FROM {cfg.table} ORDER BY draw_date DESC, draw_id DESC LIMIT 2",
         conn,
     )
     conn.close()
