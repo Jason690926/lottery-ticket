@@ -1,6 +1,7 @@
 import streamlit as st
 
 import ui_powerball
+import ui_lotto649
 
 
 # ── 啟動時靜默更新資料庫（失敗不影響 app 運作）──
@@ -80,4 +81,4 @@ with tab_pb:
     ui_powerball.render()
 
 with tab_lt:
-    st.info("大樂透分頁建置中…（Task 15 完成後會啟用）")
+    ui_lotto649.render()
