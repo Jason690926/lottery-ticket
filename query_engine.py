@@ -138,12 +138,18 @@ def zone1_dual_combined(
     return merged
 
 
-def zone2_analysis(condition_z2: int, rolling: int = ROLLING) -> tuple[pd.DataFrame, int]:
+def zone2_analysis(
+    condition_z2: int,
+    rolling: int = ROLLING,
+    cfg: LotteryConfig = POWERBALL,
+) -> tuple[pd.DataFrame, int]:
     """
     Given last Zone2 number, count next-draw Z2 frequencies (lag-1).
+    For 大樂透 (cfg=LOTTO649), Z2 is the 特別號 (1-49); 簡化版邏輯，
+    不排除「下期特別號可能落在主號」的不可能組合。
     Returns (DataFrame sorted by condition count DESC, n_condition_draws).
     """
-    df = _get_draws(rolling + 1)
+    df = _get_draws(rolling + 1, cfg)
     src = df.iloc[:rolling].reset_index(drop=True)
     nxt = df.iloc[1 : rolling + 1].reset_index(drop=True)
     T = len(src)
@@ -151,8 +157,9 @@ def zone2_analysis(condition_z2: int, rolling: int = ROLLING) -> tuple[pd.DataFr
     mask = src["n_zone2"] == condition_z2
     n_c = int(mask.sum())
 
+    Z2 = cfg.z2_max
     records = []
-    for w in range(1, 9):
+    for w in range(1, Z2 + 1):
         k = int((nxt.loc[mask, "n_zone2"] == w).sum())
         ov = int((nxt["n_zone2"] == w).sum())
         records.append({
@@ -164,5 +171,5 @@ def zone2_analysis(condition_z2: int, rolling: int = ROLLING) -> tuple[pd.DataFr
 
     out = pd.DataFrame(records)
     out = out.sort_values(f"#{condition_z2}次數", ascending=False).reset_index(drop=True)
-    out.insert(0, "排名", range(1, 9))
+    out.insert(0, "排名", range(1, Z2 + 1))
     return out, n_c
