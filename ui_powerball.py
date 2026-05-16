@@ -13,6 +13,7 @@ from query_engine import ROLLING, POWERBALL
 from ui_shared import (
     PALETTE_B1, PALETTE_B2,
     render_block_section, render_combined, render_zone2_section,
+    seed_inputs, reset_seed, render_seed_caption,
 )
 
 
@@ -29,6 +30,7 @@ def _latest_draw_date() -> str:
 
 def render():
     cfg = POWERBALL
+    seed_info = seed_inputs(cfg, "pb")
 
     st.markdown(
         f'<div class="sub-title">POWERBALL CONDITIONAL FREQUENCY ANALYZER　｜　'
@@ -70,10 +72,14 @@ def render():
             key="pb_b2_z2",
         )
 
+    render_seed_caption(seed_info)
     st.markdown("")
-    _, btn_col, _ = st.columns([3, 2, 3])
-    with btn_col:
+    _, c_run, c_reset, _ = st.columns([2, 2, 2, 2])
+    with c_run:
         run = st.button("🔍　開始分析", use_container_width=True, type="primary", key="pb_run")
+    with c_reset:
+        st.button("↻　帶回最新期", use_container_width=True, key="pb_reset",
+                  on_click=reset_seed, args=("pb",))
 
     both_z1  = bool(b1_z1 and b2_z1)
     any_z1   = bool(b1_z1 or  b2_z1)
