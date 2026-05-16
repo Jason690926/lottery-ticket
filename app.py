@@ -7,7 +7,7 @@ import ui_lotto649
 # ── 啟動時靜默更新資料庫（失敗不影響 app 運作）──
 @st.cache_resource(show_spinner=False)
 def _auto_update_db():
-    for mod in ("update_db",):  # Task 16 會加 update_db_lotto649
+    for mod in ("update_db", "update_db_lotto649"):
         try:
             __import__(mod).main()
         except Exception:
