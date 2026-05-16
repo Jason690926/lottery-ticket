@@ -106,6 +106,7 @@ def zone1_dual_combined(
     rolling: int = ROLLING,
     w1: float = 0.5,
     w2: float = 0.5,
+    cfg: LotteryConfig = POWERBALL,
 ) -> pd.DataFrame:
     """
     Weighted combination of two independent lag-1 analyses.
@@ -113,8 +114,8 @@ def zone1_dual_combined(
     Each module's counts are normalised to [0,1] before weighting.
     Returns DataFrame sorted by 綜合分數 DESC.
     """
-    df1, _, _ = zone1_analysis(block1_nums, rolling, lag=1)   # 本期 → 下一期
-    df2, _, _ = zone1_analysis(block2_nums, rolling, lag=2)   # 上一期 → 隔一期（同一目標）
+    df1, _, _ = zone1_analysis(block1_nums, rolling, lag=1, cfg=cfg)   # 本期 → 下一期
+    df2, _, _ = zone1_analysis(block2_nums, rolling, lag=2, cfg=cfg)   # 上一期 → 隔一期（同一目標）
 
     merged = df1[["號碼", "合計次數", "合計頻率%", f"近{rolling}期頻率%"]].rename(
         columns={"合計次數": "B1次數", "合計頻率%": "B1頻率%"}
@@ -133,7 +134,7 @@ def zone1_dual_combined(
 
     merged["綜合分數"] = (w1 * m1_norm + w2 * m2_norm).round(4)
     merged = merged.sort_values("綜合分數", ascending=False).reset_index(drop=True)
-    merged.insert(0, "排名", range(1, 39))
+    merged.insert(0, "排名", range(1, cfg.z1_max + 1))
     return merged
 
 
