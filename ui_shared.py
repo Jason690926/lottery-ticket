@@ -7,7 +7,10 @@
 import streamlit as st
 import plotly.graph_objects as go
 
-from query_engine import ROLLING, zone1_analysis, zone1_dual_combined, zone2_analysis
+from query_engine import (
+    ROLLING, zone1_analysis, zone1_dual_combined, zone2_analysis,
+    latest_two_draws,
+)
 
 
 PALETTE_B1 = ["#1f6feb", "#388bfd", "#58a6ff", "#79c0ff", "#a5d6ff", "#cae8ff"]
@@ -349,3 +352,49 @@ def _z2_compare(b1_z2, b2_z2, cfg):
             height=360, **plotly_base(),
         )
         st.plotly_chart(fig_cmp, use_container_width=True)
+
+
+# ── 自動帶入最新/上一期號碼（draw_id 哨兵機制）────────────────────────────────
+def seed_inputs(cfg, key_prefix: str) -> tuple[str, str, str, str]:
+    """
+    在 widget 建立『之前』呼叫。依 draw_id 哨兵決定是否種子化 4 個 widget。
+    僅在「沒種過」或「最新 draw_id 改變（新一期）」時寫入 session_state，
+    否則 no-op（保留使用者手改值）。
+    回傳 (latest_id, latest_date, prev_id, prev_date)；無資料回 ("","","","")。
+    """
+    latest, prev, latest_id = latest_two_draws(cfg)
+    p = key_prefix
+    if latest is None:
+        return ("", "", "", "")
+
+    if st.session_state.get(f"{p}_seeded_id") != latest_id:
+        st.session_state[f"{p}_b1_z1"] = list(latest["z1"])
+        st.session_state[f"{p}_b1_z2"] = latest["z2"]
+        st.session_state[f"{p}_b2_z1"] = list(prev["z1"]) if prev else []
+        st.session_state[f"{p}_b2_z2"] = prev["z2"] if prev else None
+        st.session_state[f"{p}_seeded_id"] = latest_id
+
+    return (
+        latest_id,
+        latest["draw_date"],
+        prev["draw_id"] if prev else "",
+        prev["draw_date"] if prev else "",
+    )
+
+
+def reset_seed(key_prefix: str) -> None:
+    """重設按鈕的 on_click callback：清哨兵，下一輪 seed_inputs 會重新種子。"""
+    st.session_state.pop(f"{key_prefix}_seeded_id", None)
+
+
+def render_seed_caption(info: tuple[str, str, str, str]) -> None:
+    """顯示帶入提示。info 為 seed_inputs 的回傳值。"""
+    latest_id, latest_date, prev_id, prev_date = info
+    if not latest_id:
+        st.caption("⚠️ 尚無開獎資料，未自動帶入。")
+        return
+    msg = f"🔄 已自動帶入最新一期 {latest_id}（{latest_date}）為第一區塊"
+    if prev_id:
+        msg += f"、上一期 {prev_id}（{prev_date}）為第二區塊"
+    msg += "。手動修改後可按「↻ 帶回最新期」復原。"
+    st.caption(msg)
