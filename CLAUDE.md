@@ -35,9 +35,9 @@ git status  # 確認是否落後或分叉
 
 **評估態度：** 當分析結果統計上不顯著（p > 0.05、AUC < 0.55、命中率與隨機基準無差異等），會誠實標註「無顯著訊號」，不會為了「神準」強解。最終是否選號押注，由用戶自行決定。
 
-## 當前進度（2026-05-09）
+## 當前進度（2026-05-16）
 
-**Phase：統計研究結案，Streamlit 選號工具開發中**
+**Phase：統計研究結案，Streamlit 選號工具（威力彩 + 大樂透）已上線**
 
 **Phase 0 ✅ 完成：**
 - ✅ Repo 初始化 + push、venv 建立（Python 3.14.4，`.venv/`）
@@ -80,32 +80,38 @@ Notebooks：`eda_phase0.ipynb`、`phase1_transition.ipynb`、`phase1_lag23.ipynb
 - **第二區分析**：各區塊獨立分析；兩個都填時出現「合併比較」Tab（排名表 + 並排長條圖）
 - 加權比重可用滑桿即時調整
 
-**核心架構：**
+**核心架構（多彩種，參數化共用引擎）：**
 ```
 query_engine.py
-  zone1_analysis(nums, rolling, lag)        # 單區塊頻率分析
-  zone1_dual_combined(b1, b2, rolling, w1, w2)  # 雙區塊加權合併
-  zone2_analysis(z2_num, rolling)           # 第二區分析
+  LotteryConfig (dataclass) + POWERBALL / LOTTO649 兩份設定
+  zone1_analysis(nums, rolling, lag, cfg)         # 單區塊頻率分析
+  zone1_dual_combined(b1, b2, rolling, w1, w2, cfg)  # 雙區塊加權合併
+  zone2_analysis(z2_num, rolling, cfg)            # 第二區/特別號分析
 
-app.py  # Streamlit 介面，深色科技風（GitHub dark 配色）
+app.py          # 入口：CSS + auto_update（兩彩種）+ 頂層兩個 tab
+ui_shared.py    # 共用 UI：palette/plotly_base/render_block_*/render_combined/render_zone2_section
+ui_powerball.py # 威力彩 render()（cfg=POWERBALL, key 前綴 pb_）
+ui_lotto649.py  # 大樂透 render()（cfg=LOTTO649, key 前綴 lt_）
 .streamlit/config.toml  # dark theme 設定
 ```
 
-**未完成 / 待優化（低優先）：**
-- ⏸ 設定 MCP：filesystem / sequential-thinking / playwright
-- ⏸ 資料自動更新（定期爬最新開獎並補入 lottery.db）
-
 ---
 
-**大樂透分頁 ⏸ 設計完成、實作待開工（2026-05-15）**
+**大樂透分頁 ✅ 已完成上線（2026-05-16，計畫 17 tasks 全數完成）**
 
-- 設計文件：`docs/superpowers/specs/2026-05-15-大樂透分頁-design.md`
-- 實作計畫：`docs/superpowers/plans/2026-05-15-大樂透分頁.md`（17 個 task）
-- 路線：**參數化共用引擎**（query_engine 接 `LotteryConfig`，威力彩/大樂透各傳一份）
-- 資料：同一個 `lottery.db`、新表 `draws_lotto649`，從 2014-01 回灌；不切 holdout
-- 特別號：採簡化邏輯（基準 2.04%），不排除「特別號落在主號」的不可能組合
-- UI：拆檔 `app.py` + `ui_shared.py` + `ui_powerball.py` + `ui_lotto649.py`，頂層兩個 tab
-- 開工指令：「繼續大樂透實作」→ 從計畫 Task 1（API 探勘）開始
+- 資料：`lottery.db` 新表 `draws_lotto649`，**1,401 期**（train 1,377 + live 24），
+  範圍 2014/01/03 ~ 2026/05/15；不切 holdout
+- 腳本：`backfill_lotto649.py`（一次性回灌）、`update_db_lotto649.py`（增量，app 啟動自動跑）、
+  `verify_lotto649_api.py`（API 探勘留檔）、`migrations/001_create_draws_lotto649.sql`
+- 引擎重構：sanity check 6 case byte-for-byte 一致，**威力彩行為完全未變**
+- 特別號：簡化邏輯（基準 2.04% = 1/49），不排除「特別號落在主號」的不可能組合
+- UI：頂層 `🎯 威力彩` / `🍀 大樂透` 兩個 tab，各自副標題顯示自己的「資料最新至」
+- ⚠️ Lotto649 API：`Lottery/Lotto649Result`，content key `lotto649Res`，
+  `drawNumberSize=[n1..n6, 特別號]`（前 6 已排序 + 第 7 為特別號）
+
+**未完成 / 待優化（低優先）：**
+- ⏸ 設定 MCP：filesystem / sequential-thinking / playwright
+- ⏸ 桌面捷徑檔名仍為「威力彩選號工具.bat」（功能正常，未改名；可考慮改為「樂透選號工具.bat」）
 
 ## 技術棧
 - **主語言**：Python 3.11+
