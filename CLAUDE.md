@@ -109,6 +109,27 @@ ui_lotto649.py  # 大樂透 render()（cfg=LOTTO649, key 前綴 lt_）
 - ⚠️ Lotto649 API：`Lottery/Lotto649Result`，content key `lotto649Res`，
   `drawNumberSize=[n1..n6, 特別號]`（前 6 已排序 + 第 7 為特別號）
 
+**🐞 時序排序 bug 修正 ✅（2026-05-16）**
+
+- 問題：`draws_lotto649.id`（AUTOINCREMENT）反映插入順序非開獎時序
+  （update_db 先跑佔低 id、backfill 後跑且月內 API 降冪、近月被
+  INSERT OR IGNORE 跳過 → 1232/1400 列 id↔draw_date 逆序）
+- 影響：原 `_get_draws` 用 `ORDER BY id` → **先前交付的大樂透 lag
+  分析數字全部無效**（威力彩因 id↔date 0 逆序不受影響）
+- 修正：`_get_draws` / `latest_two_draws` 改 `ORDER BY draw_date DESC,
+  draw_id DESC`；威力彩輸出位元級不變（已用 zone1/zone2 snapshot 驗證），
+  大樂透時序修正
+
+**自動帶入號碼 ✅ 已完成（2026-05-16）**
+
+- 開啟威力彩/大樂透分頁自動帶入最新一期（第一區塊）+ 上一期（第二區塊），分析自動呈現
+- 機制：`query_engine.latest_two_draws` + `ui_shared.seed_inputs`
+  （draw_id 哨兵：同期只種一次、新期才覆蓋）
+- 手改後不被覆蓋；每個 tab 有「↻ 帶回最新期」按鈕；caption 標示帶入的兩期
+- 設計：`docs/superpowers/specs/2026-05-16-自動帶入號碼-design.md`
+  計畫：`docs/superpowers/plans/2026-05-16-自動帶入號碼.md`
+- AppTest 4 情境驗證通過（種子化/手改保留/新期重種/重設）
+
 **未完成 / 待優化（低優先）：**
 - ⏸ 設定 MCP：filesystem / sequential-thinking / playwright
 - ⏸ 桌面捷徑檔名仍為「威力彩選號工具.bat」（功能正常，未改名；可考慮改為「樂透選號工具.bat」）
