@@ -173,3 +173,41 @@ def zone2_analysis(
     out = out.sort_values(f"#{condition_z2}次數", ascending=False).reset_index(drop=True)
     out.insert(0, "排名", range(1, Z2 + 1))
     return out, n_c
+
+
+def _draw_row_to_dict(r) -> dict:
+    """pandas Series（一列開獎）→ {draw_id, draw_date, z1, z2}。"""
+    return {
+        "draw_id": str(r["draw_id"]),
+        "draw_date": r["draw_date"],
+        "z1": [int(r[c]) for c in Z1_COLS],
+        "z2": int(r["n_zone2"]),
+    }
+
+
+def latest_two_draws(
+    cfg: LotteryConfig = POWERBALL,
+) -> tuple[dict | None, dict | None, str]:
+    """
+    回傳 (最新期, 上一期, 最新 draw_id)。
+    每個 dict: {"draw_id": str, "draw_date": str, "z1": [n1..n6], "z2": int}
+    - 無資料：   (None, None, "")
+    - 只有 1 期：(最新, None, latest_id)
+    - 2 期以上： (最新, 上一期, latest_id)
+    自帶含 draw_id 的查詢（_get_draws 不含 draw_id，且為分析引擎共用，
+    不在此擴充以免影響已 sanity-check 的行為）。
+    """
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql(
+        f"SELECT draw_id, draw_date, n1,n2,n3,n4,n5,n6, n_zone2 "
+        f"FROM {cfg.table} ORDER BY id DESC LIMIT 2",
+        conn,
+    )
+    conn.close()
+
+    if df.empty:
+        return None, None, ""
+
+    latest = _draw_row_to_dict(df.iloc[0])
+    prev = _draw_row_to_dict(df.iloc[1]) if len(df) > 1 else None
+    return latest, prev, latest["draw_id"]
