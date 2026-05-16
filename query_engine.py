@@ -51,6 +51,7 @@ def zone1_analysis(
     condition_nums: list[int],
     rolling: int = ROLLING,
     lag: int = 1,
+    cfg: LotteryConfig = POWERBALL,
 ) -> tuple[pd.DataFrame, int, int]:
     """
     For each x in condition_nums:
@@ -58,13 +59,14 @@ def zone1_analysis(
       count frequencies in the draw `lag` periods later.
     Returns (DataFrame sorted by combined count DESC, total_cond_appearances, T).
     """
-    df = _get_draws(rolling + lag)
+    df = _get_draws(rolling + lag, cfg)
     src = df.iloc[:rolling].reset_index(drop=True)
     nxt = df.iloc[lag : rolling + lag].reset_index(drop=True)
     T = len(src)
 
-    src_p = np.zeros((T, 38), dtype=np.int8)
-    nxt_p = np.zeros((T, 38), dtype=np.int8)
+    Z1 = cfg.z1_max
+    src_p = np.zeros((T, Z1), dtype=np.int8)
+    nxt_p = np.zeros((T, Z1), dtype=np.int8)
     for t, row in enumerate(src[Z1_COLS].itertuples(index=False, name=None)):
         for x in row:
             src_p[t, x - 1] = 1
@@ -72,7 +74,7 @@ def zone1_analysis(
         for x in row:
             nxt_p[t, x - 1] = 1
 
-    result = pd.DataFrame({"號碼": range(1, 39)})
+    result = pd.DataFrame({"號碼": range(1, Z1 + 1)})
     total_cond = 0
 
     for x in condition_nums:
@@ -80,7 +82,7 @@ def zone1_analysis(
         n_c = int(mask.sum())
         total_cond += n_c
         counts = nxt_p[mask].sum(axis=0)
-        freq = (counts / n_c * 100).round(1) if n_c > 0 else np.zeros(38)
+        freq = (counts / n_c * 100).round(1) if n_c > 0 else np.zeros(Z1)
         result[f"#{x:02d}次數"] = counts.astype(int)
         result[f"#{x:02d}頻率%"] = freq
 
@@ -94,7 +96,7 @@ def zone1_analysis(
     result[f"近{rolling}期頻率%"] = (overall / T * 100).round(1)
 
     result = result.sort_values("合計次數", ascending=False).reset_index(drop=True)
-    result.insert(0, "排名", range(1, 39))
+    result.insert(0, "排名", range(1, Z1 + 1))
     return result, total_cond, T
 
 
